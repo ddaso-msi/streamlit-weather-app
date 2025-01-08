@@ -62,27 +62,57 @@ if st.button('Get Future Weather Data'):
     date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
     weather_forecast_df, marine__forecast_df = pipeline_fetch_weather_marine_data(lat, lon)
     
-    forecastdatapoint = weather_forecast_df[weather_forecast_df['date'] == date_object].iloc[0]
-    marinedatapoint = marine__forecast_df[marine__forecast_df['date'] == date_object].iloc[0]
+    try:
+        forecastdatapoint = weather_forecast_df[weather_forecast_df['date'] == date_object].iloc[0]
+        data_forecast = {
+        'temperature_2m': round(forecastdatapoint['temperature_2m'], 2),
+        'rain': round(forecastdatapoint['rain'], 2),
+        'surface_pressure': round(forecastdatapoint['surface_pressure'], 2),
+        'wind_speed_10m': round(forecastdatapoint['wind_speed_10m'], 2),
+        'wind_direction_10m': round(forecastdatapoint['wind_direction_10m'], 2)
+        }
+    
+    except:
+        data_forecast = {
+        'temperature_2m': None,
+        'rain': None,
+        'surface_pressure': None,
+        'wind_speed_10m': None,
+        'wind_direction_10m': None
+        }
 
-    data = {
-    'temperature_2m': round(forecastdatapoint['temperature_2m'], 2),
-    'rain': round(forecastdatapoint['rain'], 2),
-    'surface_pressure': round(forecastdatapoint['surface_pressure'], 2),
-    'wind_speed_10m': round(forecastdatapoint['wind_speed_10m'], 2),
-    'wind_direction_10m': round(forecastdatapoint['wind_direction_10m'], 2),
-    'wave_height': round(marinedatapoint['wave_height'], 2),
-    'wave_direction': round(marinedatapoint['wave_direction'], 2),
-    'wave_period': round(marinedatapoint['wave_period'], 2),
-    'wind_wave_height': round(marinedatapoint['wind_wave_height'], 2),
-    'wind_wave_direction': round(marinedatapoint['wind_wave_direction'], 2),
-    'wind_wave_period': round(marinedatapoint['wind_wave_period'], 2),
-    'swell_wave_height': round(marinedatapoint['swell_wave_height'], 2),
-    'swell_wave_direction': round(marinedatapoint['swell_wave_direction'], 2),
-    'swell_wave_period': round(marinedatapoint['swell_wave_period'], 2),
-    'ocean_current_velocity': round(marinedatapoint['ocean_current_velocity'], 2),
-    'ocean_current_direction': round(marinedatapoint['ocean_current_direction'], 2)
-    }
+    try: 
+        marinedatapoint = marine__forecast_df[marine__forecast_df['date'] == date_object].iloc[0]
+        data_marine = {
+        'wave_height': round(marinedatapoint['wave_height'], 2),
+        'wave_direction': round(marinedatapoint['wave_direction'], 2),
+        'wave_period': round(marinedatapoint['wave_period'], 2),
+        'wind_wave_height': round(marinedatapoint['wind_wave_height'], 2),
+        'wind_wave_direction': round(marinedatapoint['wind_wave_direction'], 2),
+        'wind_wave_period': round(marinedatapoint['wind_wave_period'], 2),
+        'swell_wave_height': round(marinedatapoint['swell_wave_height'], 2),
+        'swell_wave_direction': round(marinedatapoint['swell_wave_direction'], 2),
+        'swell_wave_period': round(marinedatapoint['swell_wave_period'], 2),
+        'ocean_current_velocity': round(marinedatapoint['ocean_current_velocity'], 2),
+        'ocean_current_direction': round(marinedatapoint['ocean_current_direction'], 2)
+        }
+
+    except:
+        data_marine = {
+        'wave_height': None,
+        'wave_direction': None,
+        'wave_period': None,
+        'wind_wave_height': None,
+        'wind_wave_direction': None,
+        'wind_wave_period': None,
+        'swell_wave_height': None,
+        'swell_wave_direction': None,
+        'swell_wave_period': None,
+        'ocean_current_velocity': None,
+        'ocean_current_direction': None
+        }
+
+    data =  {**data_forecast, **data_marine}
 
     # Custom CSS for styling
     st.markdown("""
