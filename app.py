@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import base64
 # Setup the Open-Meteo API client with cache and retry on error
 
 
@@ -27,6 +28,31 @@ def pipeline_fetch_weather_marine_data(lat, lon):
         marine__forecast_df = pd.DataFrame(fetch_marine_forecast(lat, lon))
 
     return weather_forecast_df, marine__forecast_df
+
+# Function to get the base64 string for the image
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# Set the background image using the function above
+def set_png_as_page_bg(png_file):
+    bin_str = get_base64_of_bin_file(png_file)
+    page_bg_img = '''
+    <style>
+    .stApp {
+        background-image: url("data:image/png;base64,%s");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: scroll; /* You can change this to 'fixed' if you want the image to not scroll */
+    }
+    </style>
+    ''' % bin_str
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# Set your .png file path here
+background_img_path = 'weather-app-bck.png'  # Replace with the actual path to your .png file
+set_png_as_page_bg(background_img_path)
 
 st.title('Weather App - Open-Meteo')
 
@@ -114,22 +140,22 @@ if st.button('Get Future Weather Data'):
 
     data =  {**data_forecast, **data_marine}
 
-    # Custom CSS for styling
-    st.markdown("""
-    <style>
-    .big-font {
-        font-size:20px !important;
-    }
-    .metric-title {
-        font-size: 18px;
-        color: #262730;
-    }
-    .metric-value {
-        font-size: 24px;
-        color: #4A90E2;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # # Custom CSS for styling
+    # st.markdown("""
+    # <style>
+    # .big-font {
+    #     font-size:20px !important;
+    # }
+    # .metric-title {
+    #     font-size: 18px;
+    #     color: #262730;
+    # }
+    # .metric-value {
+    #     font-size: 24px;
+    #     color: #4A90E2;
+    # }
+    # </style>
+    # """, unsafe_allow_html=True)
 
     st.write(f"Forecast Timestamp : {date_object}")
     
