@@ -9,6 +9,13 @@ from weather_fetch import *
 from utils import *
 # Streamlit UI
 
+st.set_page_config(
+    page_title="Weather App - Open-Meteo",
+    page_icon="🌦️",
+    initial_sidebar_state="expanded"
+)
+
+
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
 openmeteo = openmeteo_requests.Client(session = cache_session)
 
@@ -51,7 +58,7 @@ def set_png_as_page_bg(png_file):
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # Set your .png file path here
-background_img_path = 'weather-app-bck.png'  # Replace with the actual path to your .png file
+background_img_path = 'weather-purple.jpg'  # Replace with the actual path to your .png file
 set_png_as_page_bg(background_img_path)
 
 st.title('Weather App - Open-Meteo')
