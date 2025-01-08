@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from retry_requests import retry
 import datetime
 # Setup the Open-Meteo API client with cache and retry on error
 
@@ -10,8 +9,7 @@ from utils import *
 # Streamlit UI
 
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
-retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
-openmeteo = openmeteo_requests.Client(session = retry_session)
+openmeteo = openmeteo_requests.Client(session = cache_session)
 
 
 st.title('Weather App - open-meteo')
