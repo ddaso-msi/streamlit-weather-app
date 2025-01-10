@@ -14,11 +14,10 @@ st.set_page_config(
     page_icon="🌦️",
     initial_sidebar_state="expanded"
 )
-
-
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
 openmeteo = openmeteo_requests.Client(session = cache_session)
 
+st.session_state['data'] = False
 
 def pipeline_fetch_weather_marine_data(lat, lon):
     import streamlit as st
@@ -106,37 +105,147 @@ aqi_metrics = {
     'uv_index': ''
     }
 
+elevation_metrics = {'elevation':'m'}
+
 start_date = st.date_input("Start Date")
 start_time = st.time_input("Start Time")
 
-if st.button('Get Future Weather Data'):
+# Create columns for buttons
+col1, col2, col3 = st.columns(3)
+
+# Place buttons in columns
+with col1:
+    if st.button('Get Future Weather Data'):
     # Convert to datetime
-    date_object = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
-    date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
-    weather_forecast_df, marine__forecast_df = pipeline_fetch_weather_marine_data(lat, lon)
-    
-    try:
-        forecastdatapoint = weather_forecast_df[weather_forecast_df['date'] == date_object].iloc[0]
-        data_forecast = {
+        date_object = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
+        date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
+        weather_forecast_df, marine__forecast_df = pipeline_fetch_weather_marine_data(lat, lon)
+        
+        try:
+            forecastdatapoint = weather_forecast_df[weather_forecast_df['date'] == date_object].iloc[0]
+            data_forecast = {
+            'temperature_2m': round(forecastdatapoint['temperature_2m'], 2),
+            'rain': round(forecastdatapoint['rain'], 2),
+            'surface_pressure': round(forecastdatapoint['surface_pressure'], 2),
+            'wind_speed_10m': round(forecastdatapoint['wind_speed_10m'], 2),
+            'wind_direction_10m': round(forecastdatapoint['wind_direction_10m'], 2)
+            }
+        
+        except:
+            data_forecast = {
+            'temperature_2m': None,
+            'rain': None,
+            'surface_pressure': None,
+            'wind_speed_10m': None,
+            'wind_direction_10m': None
+            }
+
+        try: 
+            marinedatapoint = marine__forecast_df[marine__forecast_df['date'] == date_object].iloc[0]
+            data_marine = {
+            'wave_height': round(marinedatapoint['wave_height'], 2),
+            'wave_direction': round(marinedatapoint['wave_direction'], 2),
+            'wave_period': round(marinedatapoint['wave_period'], 2),
+            'wind_wave_height': round(marinedatapoint['wind_wave_height'], 2),
+            'wind_wave_direction': round(marinedatapoint['wind_wave_direction'], 2),
+            'wind_wave_period': round(marinedatapoint['wind_wave_period'], 2),
+            'swell_wave_height': round(marinedatapoint['swell_wave_height'], 2),
+            'swell_wave_direction': round(marinedatapoint['swell_wave_direction'], 2),
+            'swell_wave_period': round(marinedatapoint['swell_wave_period'], 2),
+            'ocean_current_velocity': round(marinedatapoint['ocean_current_velocity'], 2),
+            'ocean_current_direction': round(marinedatapoint['ocean_current_direction'], 2)
+            }
+
+        except:
+            data_marine = {
+            'wave_height': None,
+            'wave_direction': None,
+            'wave_period': None,
+            'wind_wave_height': None,
+            'wind_wave_direction': None,
+            'wind_wave_period': None,
+            'swell_wave_height': None,
+            'swell_wave_direction': None,
+            'swell_wave_period': None,
+            'ocean_current_velocity': None,
+            'ocean_current_direction': None
+            }
+
+        data =  {**data_forecast, **data_marine}
+
+        st.session_state['data'] = {
+            'data': data,
+            'timestamp': date_object,
+            'type':'forecast'
+        }
+
+    if st.button('Get Historical Weather'):
+        date_object = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
+        date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
+
+        historical_data = pd.DataFrame(fetch_historical_data(lat, lon, start_date, start_date))
+        
+        try: 
+            historical_data = historical_data[historical_data['date']==date_object].iloc[0]
+            
+            data = {
+            'temperature_2m': round(historical_data['temperature_2m'], 2),
+            'rain': round(historical_data['rain'], 2),
+            'relative_humidity_2m': round(historical_data['relative_humidity_2m'], 2),
+            'surface_pressure': round(historical_data['surface_pressure'], 2),
+            'wind_speed_10m': round(historical_data['wind_speed_10m'], 2),
+            'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
+            'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
+            }
+
+            #st.write(f"Current Timestamp : {date_object}")
+
+        except:
+            data = {
+            'temperature_2m': None,
+            'rain': None,
+            'relative_humidity_2m': None,
+            'surface_pressure': None,
+            'wind_speed_10m': None,
+            'wind_direction_10m': None,
+            'wind_direction_10m': None,
+            }
+
+        # Get the current timestamp
+        latest_timestamp = datetime.now()
+        latest_timestamp = round_datetime(latest_timestamp)
+
+        latest_timestamp = pd.to_datetime(round_datetime(latest_timestamp)).tz_localize('UTC')
+        
+        st.session_state['data'] = {
+            'data': data,
+            'timestamp': latest_timestamp,
+            'type':'historical'
+        }
+        
+    if st.button('Clear'):
+        st.session_state['data'] = ''
+        st.session_state['type'] = ''
+
+with col2:
+    if st.button('Get Latest Weather'):
+        weather_forecast_df, marine__forecast_df = pipeline_fetch_weather_marine_data(lat, lon)
+
+        # Get the current timestamp
+        latest_timestamp = datetime.now()
+        latest_timestamp = round_datetime(latest_timestamp)
+
+        latest_timestamp = pd.to_datetime(round_datetime(latest_timestamp)).tz_localize('UTC')
+
+        forecastdatapoint = weather_forecast_df[weather_forecast_df['date'] == latest_timestamp].iloc[0]
+        marinedatapoint = marine__forecast_df[marine__forecast_df['date'] == latest_timestamp].iloc[0]
+
+        data = {
         'temperature_2m': round(forecastdatapoint['temperature_2m'], 2),
         'rain': round(forecastdatapoint['rain'], 2),
         'surface_pressure': round(forecastdatapoint['surface_pressure'], 2),
         'wind_speed_10m': round(forecastdatapoint['wind_speed_10m'], 2),
-        'wind_direction_10m': round(forecastdatapoint['wind_direction_10m'], 2)
-        }
-    
-    except:
-        data_forecast = {
-        'temperature_2m': None,
-        'rain': None,
-        'surface_pressure': None,
-        'wind_speed_10m': None,
-        'wind_direction_10m': None
-        }
-
-    try: 
-        marinedatapoint = marine__forecast_df[marine__forecast_df['date'] == date_object].iloc[0]
-        data_marine = {
+        'wind_direction_10m': round(forecastdatapoint['wind_direction_10m'], 2),
         'wave_height': round(marinedatapoint['wave_height'], 2),
         'wave_direction': round(marinedatapoint['wave_direction'], 2),
         'wave_period': round(marinedatapoint['wave_period'], 2),
@@ -150,260 +259,146 @@ if st.button('Get Future Weather Data'):
         'ocean_current_direction': round(marinedatapoint['ocean_current_direction'], 2)
         }
 
-    except:
-        data_marine = {
-        'wave_height': None,
-        'wave_direction': None,
-        'wave_period': None,
-        'wind_wave_height': None,
-        'wind_wave_direction': None,
-        'wind_wave_period': None,
-        'swell_wave_height': None,
-        'swell_wave_direction': None,
-        'swell_wave_period': None,
-        'ocean_current_velocity': None,
-        'ocean_current_direction': None
+        st.session_state['data'] = {
+            'data': data,
+            'timestamp': latest_timestamp,
+            'type':'forecast'
         }
 
-    data =  {**data_forecast, **data_marine}
+    if st.button('Get Current AQI'):
+        aquidata = pd.DataFrame(fetch_aqi(lat,lon))
 
-
-    st.write(f"Forecast Timestamp : {date_object}")
-    
-    # Displaying metrics in two columns for better visual organization
-    col1, col2 = st.columns(2)
-
-    for i, (metric, unit) in enumerate(metrics.items()):
-        # Use column layout for better aesthetics
-        if i < len(metrics) / 2:
-            display_column = col1
-        else:
-            display_column = col2
-        
-        # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
-        value = data.get(metric, "N/A")
-        
-        # Display metric with unit and value in big, bold font
-        display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
-        
-        # Add some spacing for better readability
-        display_column.markdown("<br>", unsafe_allow_html=True)
-
-if st.button('Get Historical Weather'):
-    date_object = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
-    date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
-
-    historical_data = pd.DataFrame(fetch_historical_data(lat, lon, start_date, start_date))
-    
-    try: 
-        historical_data = historical_data[historical_data['date']==date_object].iloc[0]
-        
-        data = {
-        'temperature_2m': round(historical_data['temperature_2m'], 2),
-        'rain': round(historical_data['rain'], 2),
-        'relative_humidity_2m': round(historical_data['relative_humidity_2m'], 2),
-        'surface_pressure': round(historical_data['surface_pressure'], 2),
-        'wind_speed_10m': round(historical_data['wind_speed_10m'], 2),
-        'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
-        'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
-        }
-
-        st.write(f"Current Timestamp : {date_object}")
-
-    except:
-        data = {
-        'temperature_2m': None,
-        'rain': None,
-        'relative_humidity_2m': None,
-        'surface_pressure': None,
-        'wind_speed_10m': None,
-        'wind_direction_10m': None,
-        'wind_direction_10m': None,
-        }
-
-        # Get the current timestamp
         latest_timestamp = datetime.now()
         latest_timestamp = round_datetime(latest_timestamp)
 
         latest_timestamp = pd.to_datetime(round_datetime(latest_timestamp)).tz_localize('UTC')
+        aquidata = aquidata[aquidata['date']==latest_timestamp].iloc[0]
 
-        st.write(f"Please enter a historical date less than {latest_timestamp}")
-    # Custom CSS for styling
-    st.markdown("""
-    <style>
-    .big-font {
-        font-size:20px !important;
-    }
-    .metric-title {
-        font-size: 18px;
-        color: #262730;
-    }
-    .metric-value {
-        font-size: 24px;
-        color: #4A90E2;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    
-    
-    # Displaying metrics in two columns for better visual organization
-    col1, col2 = st.columns(2)
-
-    for i, (metric, unit) in enumerate(historical_metrics.items()):
-        # Use column layout for better aesthetics
-        if i < len(historical_metrics) / 2:
-            display_column = col1
-        else:
-            display_column = col2
+        data = {
+        'pm10': round(aquidata['pm10'], 2),
+        'pm2_5': round(aquidata['pm2_5'], 2),
+        'carbon_monoxide': round(aquidata['carbon_monoxide'], 2),
+        'carbon_dioxide': round(aquidata['carbon_dioxide'], 2),
+        'nitrogen_dioxide': round(aquidata['nitrogen_dioxide'], 2),
+        'sulphur_dioxide': round(aquidata['sulphur_dioxide'], 2),
+        'ozone': round(aquidata['ozone'], 2),
+        'dust': round(aquidata['dust'], 2),
+        'uv_index': round(aquidata['uv_index'], 2)
+        }
         
-        # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
-        value = data.get(metric, "N/A")
+        st.session_state['data'] = {
+            'data': data,
+            'timestamp': latest_timestamp,
+            'type':'aqi'
+        }
+
+with col3:
+    if st.button('Get Elevation'):
+        elevation = fetch_elevation_data(10, 1)['elevation'][0]
+        st.session_state['data'] = {
+            'data': elevation,
+            'type':'elevation'
+        }
         
-        # Display metric with unit and value in big, bold font
-        display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
-        
-        # Add some spacing for better readability
-        display_column.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Get River Discharge"):
+        data = fetch_river_discharge(lat,lon)
 
-if st.button('Get Latest Weather'):
-    weather_forecast_df, marine__forecast_df = pipeline_fetch_weather_marine_data(lat, lon)
+        st.session_state['data'] = {
+            'data': data,
+            'type':'discharge'
+        }
 
-    # Get the current timestamp
-    latest_timestamp = datetime.now()
-    latest_timestamp = round_datetime(latest_timestamp)
-
-    latest_timestamp = pd.to_datetime(round_datetime(latest_timestamp)).tz_localize('UTC')
-
-    forecastdatapoint = weather_forecast_df[weather_forecast_df['date'] == latest_timestamp].iloc[0]
-    marinedatapoint = marine__forecast_df[marine__forecast_df['date'] == latest_timestamp].iloc[0]
-
-    data = {
-    'temperature_2m': round(forecastdatapoint['temperature_2m'], 2),
-    'rain': round(forecastdatapoint['rain'], 2),
-    'surface_pressure': round(forecastdatapoint['surface_pressure'], 2),
-    'wind_speed_10m': round(forecastdatapoint['wind_speed_10m'], 2),
-    'wind_direction_10m': round(forecastdatapoint['wind_direction_10m'], 2),
-    'wave_height': round(marinedatapoint['wave_height'], 2),
-    'wave_direction': round(marinedatapoint['wave_direction'], 2),
-    'wave_period': round(marinedatapoint['wave_period'], 2),
-    'wind_wave_height': round(marinedatapoint['wind_wave_height'], 2),
-    'wind_wave_direction': round(marinedatapoint['wind_wave_direction'], 2),
-    'wind_wave_period': round(marinedatapoint['wind_wave_period'], 2),
-    'swell_wave_height': round(marinedatapoint['swell_wave_height'], 2),
-    'swell_wave_direction': round(marinedatapoint['swell_wave_direction'], 2),
-    'swell_wave_period': round(marinedatapoint['swell_wave_period'], 2),
-    'ocean_current_velocity': round(marinedatapoint['ocean_current_velocity'], 2),
-    'ocean_current_direction': round(marinedatapoint['ocean_current_direction'], 2)
-    }
-
-    # Custom CSS for styling
-    st.markdown("""
-    <style>
-    .big-font {
-        font-size:20px !important;
-    }
-    .metric-title {
-        font-size: 18px;
-        color: #262730;
-    }
-    .metric-value {
-        font-size: 24px;
-        color: #4A90E2;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.write(f"Current Timestamp : {latest_timestamp}")
-    
-    # Displaying metrics in two columns for better visual organization
-    col1, col2 = st.columns(2)
-
-    for i, (metric, unit) in enumerate(metrics.items()):
-        # Use column layout for better aesthetics
-        if i < len(metrics) / 2:
-            display_column = col1
-        else:
-            display_column = col2
-        
-        # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
-        value = data.get(metric, "N/A")
-        
-        # Display metric with unit and value in big, bold font
-        display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
-        
-        # Add some spacing for better readability
-        display_column.markdown("<br>", unsafe_allow_html=True)
-
-if st.button('Get Current AQI'):
-    aquidata = pd.DataFrame(fetch_aqi(lat,lon))
-
-    latest_timestamp = datetime.now()
-    latest_timestamp = round_datetime(latest_timestamp)
-
-    latest_timestamp = pd.to_datetime(round_datetime(latest_timestamp)).tz_localize('UTC')
-    aquidata = aquidata[aquidata['date']==latest_timestamp].iloc[0]
-
-    data = {
-    'pm10': round(aquidata['pm10'], 2),
-    'pm2_5': round(aquidata['pm2_5'], 2),
-    'carbon_monoxide': round(aquidata['carbon_monoxide'], 2),
-    'carbon_dioxide': round(aquidata['carbon_dioxide'], 2),
-    'nitrogen_dioxide': round(aquidata['nitrogen_dioxide'], 2),
-    'sulphur_dioxide': round(aquidata['sulphur_dioxide'], 2),
-    'ozone': round(aquidata['ozone'], 2),
-    'dust': round(aquidata['dust'], 2),
-    'uv_index': round(aquidata['uv_index'], 2)
-    }
-
-    # Custom CSS for styling
-    st.markdown("""
-    <style>
-    .big-font {
-        font-size:20px !important;
-    }
-    .metric-title {
-        font-size: 18px;
-        color: #262730;
-    }
-    .metric-value {
-        font-size: 24px;
-        color: #4A90E2;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Displaying metrics in two columns for better visual organization
-    col1, col2 = st.columns(2)
-
-    for i, (metric, unit) in enumerate(aqi_metrics.items()):
-        # Use column layout for better aesthetics
-        if i < len(aqi_metrics) / 2:
-            display_column = col1
-        else:
-            display_column = col2
-        
-        # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
-        value = data.get(metric, "N/A")
-        
-        # Display metric with unit and value in big, bold font
-        display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
-        
-        # Add some spacing for better readability
-        display_column.markdown("<br>", unsafe_allow_html=True)
-
-if st.button('Get Elevation'):
-    elevation = fetch_elevation_data(10, 1)['elevation'][0]
-    st.markdown(f"**:blue[Elevation]** : {elevation}", unsafe_allow_html=True)
-
-   
+col1, col2 = st.columns(2)
 
 
 
-if st.button("Get River Discharge"):
-    data = pd.DataFrame(fetch_river_discharge(lat,lon))
+if st.session_state['data']:
+    data = st.session_state['data']['data']
+    type = st.session_state['data']['type']
 
-    st.write(data)
+    if type == "forecast":
+        for i, (metric, unit) in enumerate(metrics.items()):
+            # Use column layout for better aesthetics
+            if i < len(metrics) / 2:
+                display_column = col1
+            else:
+                display_column = col2
+            
+            # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
+            value = data.get(metric, "N/A")
+            
+            # Display metric with unit and value in big, bold font
+            display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
+            
+            # Add some spacing for better readability
+            display_column.markdown("<br>", unsafe_allow_html=True)
+
+    elif (type == "historical"):
+        for i, (metric, unit) in enumerate(historical_metrics.items()):
+            # Use column layout for better aesthetics
+            if i < len(historical_metrics) / 2:
+                display_column = col1
+            else:
+                display_column = col2
+            
+            # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
+            value = data.get(metric, "N/A")
+            
+            # Display metric with unit and value in big, bold font
+            display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
+            
+            # Add some spacing for better readability
+            display_column.markdown("<br>", unsafe_allow_html=True)
+
+    elif (type == "aqi"):
+        for i, (metric, unit) in enumerate(aqi_metrics.items()):
+            # Use column layout for better aesthetics
+            if i < len(aqi_metrics) / 2:
+                display_column = col1
+            else:
+                display_column = col2
+            
+            # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
+            value = data.get(metric, "N/A")
+            
+            # Display metric with unit and value in big, bold font
+            display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
+            
+            # Add some spacing for better readability
+            display_column.markdown("<br>", unsafe_allow_html=True)
+
+    elif (type == "elevation"):
+        for i, (metric, unit) in enumerate(elevation_metrics.items()):
+            # Use column layout for better aesthetics
+            if i < len(elevation_metrics) / 2:
+                display_column = col1
+            else:
+                display_column = col2
+            
+            # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
+            value = data
+            
+            # Display metric with unit and value in big, bold font
+            display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
+            
+            # Add some spacing for better readability
+            display_column.markdown("<br>", unsafe_allow_html=True)
+
+
+    elif (type == "discharge"): 
+        datadf = pd.DataFrame(data)
+        st.write(f"Showing next {len(datadf)} days discharge forecast")
+        st.write(datadf)
+
+    else:
+        print("Waiting for input ,1")
+
+else:
+    print(f"cache cleared")
+
+
+# if st.session_state['historical_weather_data']:
+#     st.write(st.session_state['historical_weather_data']['data'])
 
 st.markdown("---Geocoding API---")  # Horizontal line for separation
 st.markdown("Search locations globally")
