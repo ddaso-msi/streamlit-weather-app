@@ -5,7 +5,7 @@ import base64
 import folium
 from streamlit_folium import st_folium
 
-from folium.plugins import BoatMarker, MousePosition
+from folium.plugins import BoatMarker, MousePosition, Draw
 
 # Setup the Open-Meteo API client with cache and retry on error
 
@@ -76,6 +76,7 @@ def show_map_in_streamlit(lat, lon, zoom_start=5):
     # Create a base map
     m = folium.Map(location=[lat, lon], zoom_start=zoom_start)
     MousePosition().add_to(m)
+    Draw(export=True).add_to(m)
     # Add a marker at the specified location
     folium.plugins.BoatMarker(
         location=(lat, lon), heading=45, wind_heading=150, wind_speed=45, color="#8f8"
