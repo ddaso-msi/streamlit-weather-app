@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import datetime
 import base64
+import folium
+from streamlit_folium import st_folium
+
 # Setup the Open-Meteo API client with cache and retry on error
 
 
@@ -56,15 +59,54 @@ def set_png_as_page_bg(png_file):
     ''' % bin_str
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
+def show_map_in_streamlit(lat, lon, zoom_start=2):
+    """
+    Create and display a Folium map in Streamlit using st_folium.
+
+    Parameters:
+    - lat (float): Latitude of the map center.
+    - lon (float): Longitude of the map center.
+    - zoom_start (int): Initial zoom level for the map. Default is 13.
+
+    Returns:
+    None. Displays the map directly in Streamlit.
+    """
+    # Create a base map
+    m = folium.Map(location=[lat, lon], zoom_start=zoom_start)
+
+    # Add a marker at the specified location
+    folium.Circle([lat, lon],color="red",radius=5).add_to(m)
+
+    # Display the map in Streamlit using st_folium
+    st_map = st_folium(m, width=700, height=450)
+
 # Set your .png file path here
 background_img_path = 'weather-purple.jpg'  # Replace with the actual path to your .png file
 set_png_as_page_bg(background_img_path)
 
+lat, lon = 0,0
+st.session_state['lat'] = lat 
+st.session_state['lon'] = lon 
+
 st.title('Weather App - Open-Meteo')
 
-# User input for latitude and longitude
-lat = st.number_input('Enter Latitude', min_value=-90.0, max_value=90.0, value=0.0, step=0.01)
-lon = st.number_input('Enter Longitude', min_value=-180.0, max_value=180.0, value=0.0, step=0.01)
+if 'show_map' not in st.session_state:
+    st.session_state.show_map = True
+
+
+col1, col2  = st.columns(2)
+
+with col1:
+    # User input for latitude and longitude
+    lat = st.number_input('Enter Latitude', min_value=-90.0, max_value=90.0, value=0.0, step=0.01)
+    start_date = st.date_input("Date")
+
+with col2:
+    lon = st.number_input('Enter Longitude', min_value=-180.0, max_value=180.0, value=0.0, step=0.01)
+    start_time = st.time_input("Time")
+
+if st.session_state.show_map:
+    show_map_in_streamlit(lat, lon)
 
 metrics = {
     'temperature_2m': '°C',
@@ -107,8 +149,6 @@ aqi_metrics = {
 
 elevation_metrics = {'elevation':'m'}
 
-start_date = st.date_input("Start Date")
-start_time = st.time_input("Start Time")
 
 # Create columns for buttons
 col1, col2, col3 = st.columns(3)
@@ -221,11 +261,7 @@ with col1:
             'data': data,
             'timestamp': latest_timestamp,
             'type':'historical'
-        }
-        
-    if st.button('Clear'):
-        st.session_state['data'] = ''
-        st.session_state['type'] = ''
+        }   
 
 with col2:
     if st.button('Get Latest Weather'):
@@ -307,9 +343,6 @@ with col3:
             'data': data,
             'type':'discharge'
         }
-
-col1, col2 = st.columns(2)
-
 
 
 if st.session_state['data']:
@@ -395,10 +428,6 @@ if st.session_state['data']:
 
 else:
     print(f"cache cleared")
-
-
-# if st.session_state['historical_weather_data']:
-#     st.write(st.session_state['historical_weather_data']['data'])
 
 st.markdown("---Geocoding API---")  # Horizontal line for separation
 st.markdown("Search locations globally")
