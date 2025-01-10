@@ -182,18 +182,40 @@ if st.button('Get Historical Weather'):
     date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
 
     historical_data = pd.DataFrame(fetch_historical_data(lat, lon, start_date, start_date))
-    historical_data = historical_data[historical_data['date']==date_object].iloc[0]
     
-    data = {
-    'temperature_2m': round(historical_data['temperature_2m'], 2),
-    'rain': round(historical_data['rain'], 2),
-    'relative_humidity_2m': round(historical_data['relative_humidity_2m'], 2),
-    'surface_pressure': round(historical_data['surface_pressure'], 2),
-    'wind_speed_10m': round(historical_data['wind_speed_10m'], 2),
-    'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
-    'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
-    }
+    try: 
+        historical_data = historical_data[historical_data['date']==date_object].iloc[0]
+        
+        data = {
+        'temperature_2m': round(historical_data['temperature_2m'], 2),
+        'rain': round(historical_data['rain'], 2),
+        'relative_humidity_2m': round(historical_data['relative_humidity_2m'], 2),
+        'surface_pressure': round(historical_data['surface_pressure'], 2),
+        'wind_speed_10m': round(historical_data['wind_speed_10m'], 2),
+        'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
+        'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
+        }
 
+        st.write(f"Current Timestamp : {date_object}")
+
+    except:
+        data = {
+        'temperature_2m': None,
+        'rain': None,
+        'relative_humidity_2m': None,
+        'surface_pressure': None,
+        'wind_speed_10m': None,
+        'wind_direction_10m': None,
+        'wind_direction_10m': None,
+        }
+
+        # Get the current timestamp
+        latest_timestamp = datetime.now()
+        latest_timestamp = round_datetime(latest_timestamp)
+
+        latest_timestamp = pd.to_datetime(round_datetime(latest_timestamp)).tz_localize('UTC')
+
+        st.write(f"Please enter a historical date less than {latest_timestamp}")
     # Custom CSS for styling
     st.markdown("""
     <style>
@@ -211,7 +233,7 @@ if st.button('Get Historical Weather'):
     </style>
     """, unsafe_allow_html=True)
 
-    st.write(f"Current Timestamp : {date_object}")
+    
     
     # Displaying metrics in two columns for better visual organization
     col1, col2 = st.columns(2)
