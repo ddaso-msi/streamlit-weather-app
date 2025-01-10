@@ -149,8 +149,6 @@ aqi_metrics = {
 
 elevation_metrics = {'elevation':'m'}
 
-
-# Create columns for buttons
 col1, col2, col3 = st.columns(3)
 
 # Place buttons in columns
@@ -429,7 +427,7 @@ if st.session_state['data']:
 else:
     print(f"cache cleared")
 
-st.markdown("---Geocoding API---")  # Horizontal line for separation
+st.markdown("==== Geocoding ====")  # Horizontal line for separation
 st.markdown("Search locations globally")
 
 user_input = st.text_input("Search")
@@ -440,6 +438,30 @@ if st.button("Show Result"):
     result = pd.DataFrame(fetch_geocoding(user_input,num_results)['results'])
     #result = result[result['country']==country_input]
     st.write(result)
+
+st.markdown("==== Route Analysis ==== (COMING SOON)") 
+
+col1, col2, col3 = st.columns(3)
+
+st.session_state['route'] = {'data':[]}
+with col1:
+    if st.button("Add to route"):
+        # route = st.session_state['route']['data']
+        # st.write(route)
+        # route.append((lat,lon))
+        # st.session_state['route']['data'] = route
+        # st.write(f"{lat} {lon}, added to route !!")
+        # st.write(st.session_state['route']['data'])
+        st.write("Coming Soon...")
+with col2:
+    if st.button("Show route"):
+        if st.session_state['route']:
+            # st.write(st.session_state['route']['data'])
+            st.write("Coming Soon...")
+with col3:
+    if st.button("Remove from route"):
+        # st.session_state['route']['data'] = st.session_state['route'][:-1]
+        st.write("Coming Soon...")
 
 st.markdown("---")  # Horizontal line for separation
 
