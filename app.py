@@ -469,3 +469,5 @@ st.markdown("---")  # Horizontal line for separation
 st.markdown("""
 **Note:** This app uses open-meteo API to fetch weather data. Make sure you have entered valid latitude and longitude coordinates.
 """)
+
+st.markdown('Website : <a href="https://open-meteo.com/" target="_blank">https://open-meteo.com/</a>', unsafe_allow_html=True)
