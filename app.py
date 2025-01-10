@@ -86,6 +86,14 @@ metrics = {
     'ocean_current_direction': '°'
     }
 
+historical_metrics = {
+    'temperature_2m': '°C',
+    'rain': 'mm',
+    'surface_pressure': 'hPa',
+    'wind_speed_10m': 'm/s',
+    'wind_direction_10m': '°',
+}
+
 start_date = st.date_input("Start Date")
 start_time = st.time_input("Start Time")
 
@@ -147,22 +155,6 @@ if st.button('Get Future Weather Data'):
 
     data =  {**data_forecast, **data_marine}
 
-    # # Custom CSS for styling
-    # st.markdown("""
-    # <style>
-    # .big-font {
-    #     font-size:20px !important;
-    # }
-    # .metric-title {
-    #     font-size: 18px;
-    #     color: #262730;
-    # }
-    # .metric-value {
-    #     font-size: 24px;
-    #     color: #4A90E2;
-    # }
-    # </style>
-    # """, unsafe_allow_html=True)
 
     st.write(f"Forecast Timestamp : {date_object}")
     
@@ -185,6 +177,60 @@ if st.button('Get Future Weather Data'):
         # Add some spacing for better readability
         display_column.markdown("<br>", unsafe_allow_html=True)
 
+if st.button('Get Historical Weather'):
+    date_object = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
+    date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
+
+    historical_data = pd.DataFrame(fetch_historical_data(lat, lon, start_date, start_date))
+    historical_data = historical_data[historical_data['date']==date_object].iloc[0]
+    
+    data = {
+    'temperature_2m': round(historical_data['temperature_2m'], 2),
+    'rain': round(historical_data['rain'], 2),
+    'relative_humidity_2m': round(historical_data['relative_humidity_2m'], 2),
+    'surface_pressure': round(historical_data['surface_pressure'], 2),
+    'wind_speed_10m': round(historical_data['wind_speed_10m'], 2),
+    'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
+    'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
+    }
+
+    # Custom CSS for styling
+    st.markdown("""
+    <style>
+    .big-font {
+        font-size:20px !important;
+    }
+    .metric-title {
+        font-size: 18px;
+        color: #262730;
+    }
+    .metric-value {
+        font-size: 24px;
+        color: #4A90E2;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.write(f"Current Timestamp : {date_object}")
+    
+    # Displaying metrics in two columns for better visual organization
+    col1, col2 = st.columns(2)
+
+    for i, (metric, unit) in enumerate(historical_metrics.items()):
+        # Use column layout for better aesthetics
+        if i < len(historical_metrics) / 2:
+            display_column = col1
+        else:
+            display_column = col2
+        
+        # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
+        value = data.get(metric, "N/A")
+        
+        # Display metric with unit and value in big, bold font
+        display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
+        
+        # Add some spacing for better readability
+        display_column.markdown("<br>", unsafe_allow_html=True)
 
 if st.button('Get Latest Weather'):
     weather_forecast_df, marine__forecast_df = pipeline_fetch_weather_marine_data(lat, lon)
