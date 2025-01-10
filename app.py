@@ -61,7 +61,7 @@ def set_png_as_page_bg(png_file):
     ''' % bin_str
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
-def show_map_in_streamlit(lat, lon, zoom_start=2):
+def show_map_in_streamlit(lat, lon, zoom_start=5):
     """
     Create and display a Folium map in Streamlit using st_folium.
 
@@ -81,6 +81,7 @@ def show_map_in_streamlit(lat, lon, zoom_start=2):
         location=(lat, lon), heading=45, wind_heading=150, wind_speed=45, color="#8f8"
     ).add_to(m)
 
+    folium.plugins.Geocoder().add_to(m)
     folium.Circle([lat, lon],color="red",radius=15).add_to(m)
 
     # Display the map in Streamlit using st_folium
