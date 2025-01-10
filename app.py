@@ -94,6 +94,18 @@ historical_metrics = {
     'wind_direction_10m': '°',
 }
 
+aqi_metrics = {
+    'pm10': '',
+    'pm2_5': '',
+    'carbon_monoxide': '',
+    'carbon_dioxide': '',
+    'nitrogen_dioxide': '',
+    'sulphur_dioxide': '',
+    'ozone': '',
+    'dust': '',
+    'uv_index': ''
+    }
+
 start_date = st.date_input("Start Date")
 start_time = st.time_input("Start Time")
 
@@ -323,7 +335,89 @@ if st.button('Get Latest Weather'):
         # Add some spacing for better readability
         display_column.markdown("<br>", unsafe_allow_html=True)
 
-    st.markdown("---")  # Horizontal line for separation
+if st.button('Get Current AQI'):
+    aquidata = pd.DataFrame(fetch_aqi(lat,lon))
+
+    latest_timestamp = datetime.now()
+    latest_timestamp = round_datetime(latest_timestamp)
+
+    latest_timestamp = pd.to_datetime(round_datetime(latest_timestamp)).tz_localize('UTC')
+    aquidata = aquidata[aquidata['date']==latest_timestamp].iloc[0]
+
+    data = {
+    'pm10': round(aquidata['pm10'], 2),
+    'pm2_5': round(aquidata['pm2_5'], 2),
+    'carbon_monoxide': round(aquidata['carbon_monoxide'], 2),
+    'carbon_dioxide': round(aquidata['carbon_dioxide'], 2),
+    'nitrogen_dioxide': round(aquidata['nitrogen_dioxide'], 2),
+    'sulphur_dioxide': round(aquidata['sulphur_dioxide'], 2),
+    'ozone': round(aquidata['ozone'], 2),
+    'dust': round(aquidata['dust'], 2),
+    'uv_index': round(aquidata['uv_index'], 2)
+    }
+
+    # Custom CSS for styling
+    st.markdown("""
+    <style>
+    .big-font {
+        font-size:20px !important;
+    }
+    .metric-title {
+        font-size: 18px;
+        color: #262730;
+    }
+    .metric-value {
+        font-size: 24px;
+        color: #4A90E2;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Displaying metrics in two columns for better visual organization
+    col1, col2 = st.columns(2)
+
+    for i, (metric, unit) in enumerate(aqi_metrics.items()):
+        # Use column layout for better aesthetics
+        if i < len(aqi_metrics) / 2:
+            display_column = col1
+        else:
+            display_column = col2
+        
+        # Fetch the actual value from your data structure (replace 'data' with your actual data variable)
+        value = data.get(metric, "N/A")
+        
+        # Display metric with unit and value in big, bold font
+        display_column.markdown(f"**:blue[{metric.replace('_', ' ').title()}]**: {value} {unit}", unsafe_allow_html=True)
+        
+        # Add some spacing for better readability
+        display_column.markdown("<br>", unsafe_allow_html=True)
+
+if st.button('Get Elevation'):
+    elevation = fetch_elevation_data(10, 1)['elevation'][0]
+    st.markdown(f"**:blue[Elevation]** : {elevation}", unsafe_allow_html=True)
+
+   
+
+
+
+if st.button("Get River Discharge"):
+    data = pd.DataFrame(fetch_river_discharge(lat,lon))
+
+    st.write(data)
+
+st.markdown("---Geocoding API---")  # Horizontal line for separation
+st.markdown("Search locations globally")
+
+user_input = st.text_input("Search")
+#country_input = st.text_input("Country")
+num_results = int(st.number_input("Num Results (how many rows you want returned)", min_value=10, max_value=100,))
+
+if st.button("Show Result"):
+    result = pd.DataFrame(fetch_geocoding(user_input,num_results)['results'])
+    #result = result[result['country']==country_input]
+    st.write(result)
+
+st.markdown("---")  # Horizontal line for separation
 
 # Optional: Add some styling or additional information
 st.markdown("""
