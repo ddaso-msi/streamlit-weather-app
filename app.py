@@ -4,12 +4,9 @@ import datetime
 import base64
 import folium
 from streamlit_folium import st_folium
-
 from folium.plugins import BoatMarker, MousePosition, Draw
 
 # Setup the Open-Meteo API client with cache and retry on error
-
-
 from weather_fetch import *
 from utils import *
 # Streamlit UI
@@ -92,23 +89,20 @@ def show_map_in_streamlit(lat, lon, zoom_start=5):
 background_img_path = 'weather-purple.jpg'  # Replace with the actual path to your .png file
 set_png_as_page_bg(background_img_path)
 
-lat, lon = 0,0
-st.session_state['lat'] = lat 
-st.session_state['lon'] = lon 
+start_lat, start_lon = 0,0
+st.session_state['lat'] = start_lat 
+st.session_state['lon'] = start_lon 
 
 st.title('Weather App - Open-Meteo')
 
 if 'show_map' not in st.session_state:
     st.session_state.show_map = True
 
-
 col1, col2  = st.columns(2)
-
 with col1:
     # User input for latitude and longitude
     lat = st.number_input('Enter Latitude', min_value=-90.0, max_value=90.0, value=0.0, step=0.01)
     start_date = st.date_input("Date")
-
 with col2:
     lon = st.number_input('Enter Longitude', min_value=-180.0, max_value=180.0, value=0.0, step=0.01)
     start_time = st.time_input("Time")
@@ -158,7 +152,6 @@ aqi_metrics = {
 elevation_metrics = {'elevation':'m'}
 
 col1, col2, col3 = st.columns(3)
-
 # Place buttons in columns
 with col1:
     if st.button('Get Future Weather Data'):
@@ -166,7 +159,6 @@ with col1:
         date_object = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
         date_object= pd.to_datetime(round_datetime(date_object)).tz_localize('UTC')
         weather_forecast_df, marine__forecast_df = pipeline_fetch_weather_marine_data(lat, lon)
-        
         try:
             forecastdatapoint = weather_forecast_df[weather_forecast_df['date'] == date_object].iloc[0]
             data_forecast = {
@@ -243,8 +235,6 @@ with col1:
             'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
             'wind_direction_10m': round(historical_data['wind_direction_10m'], 2),
             }
-
-            #st.write(f"Current Timestamp : {date_object}")
 
         except:
             data = {
@@ -423,7 +413,6 @@ if st.session_state['data']:
             # Add some spacing for better readability
             display_column.markdown("<br>", unsafe_allow_html=True)
 
-
     elif (type == "discharge"): 
         datadf = pd.DataFrame(data)
         st.write(f"Showing next {len(datadf)} days discharge forecast")
@@ -446,30 +435,6 @@ if st.button("Show Result"):
     result = pd.DataFrame(fetch_geocoding(user_input,num_results)['results'])
     #result = result[result['country']==country_input]
     st.write(result)
-
-st.markdown("==== Route Analysis ==== (COMING SOON)") 
-
-col1, col2, col3 = st.columns(3)
-
-st.session_state['route'] = {'data':[]}
-with col1:
-    if st.button("Add to route"):
-        # route = st.session_state['route']['data']
-        # st.write(route)
-        # route.append((lat,lon))
-        # st.session_state['route']['data'] = route
-        # st.write(f"{lat} {lon}, added to route !!")
-        # st.write(st.session_state['route']['data'])
-        st.write("Coming Soon...")
-with col2:
-    if st.button("Show route"):
-        if st.session_state['route']:
-            # st.write(st.session_state['route']['data'])
-            st.write("Coming Soon...")
-with col3:
-    if st.button("Remove from route"):
-        # st.session_state['route']['data'] = st.session_state['route'][:-1]
-        st.write("Coming Soon...")
 
 st.markdown("---")  # Horizontal line for separation
 
